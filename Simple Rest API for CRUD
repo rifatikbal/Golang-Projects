@@ -1,0 +1,116 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"github.com/go-chi/chi/v5"
+)
+
+type adress struct {
+	Village  string `json:"village"`
+	Thana    string `json:"thana"`
+	District string `json:"district"`
+}
+
+type student struct {
+	Name   string `json:"name"`
+	ID     string `json:"id"`
+	Adress adress `json:"adress"`
+}
+
+var students []student
+
+func Add_New_Student(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-Type", "application/json")
+
+	var tempstudent student
+	_ = json.NewDecoder(r.Body).Decode(&tempstudent)
+
+	students = append(students, tempstudent)
+	json.NewEncoder(w).Encode(students)
+}
+
+func Get_All_Students(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-Type", "application/json")
+	ID := chi.URLParam(r, "id")
+	fmt.Println("I am", ID)
+	json.NewEncoder(w).Encode(students)
+}
+
+func Get_Student_With_ID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-Type", "application/json")
+
+	ID := chi.URLParam(r, "id")
+	fmt.Println("we are good ")
+	fmt.Println(ID)
+	fmt.Println("ikbal")
+
+	for _, item := range students {
+		if item.ID == ID {
+			//students = append(students[:index], students[index+1:]...)
+			//break
+
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+}
+
+func Update_Student_With_ID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-Type", "application/json")
+	var tempstudent student
+	_ = json.NewDecoder(r.Body).Decode(&tempstudent)
+
+	ID := chi.URLParam(r, "id")
+
+	//fmt.Println(" I love u")
+	fmt.Println(ID)
+	for index, item := range students {
+		if item.ID == ID {
+			students = append(students[:index], students[index+1:]...)
+			tempstudent.ID = ID
+			students = append(students, tempstudent)
+			json.NewEncoder(w).Encode(students)
+			return
+		}
+	}
+}
+
+func Delete_Student_with_ID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-Type", "application/json")
+
+	//params := chi.URLParam(r)
+
+	ID := chi.URLParam(r, "id")
+	for index, item := range students {
+		if item.ID == ID {
+			students = append(students[:index], students[index+1:]...)
+			//break
+			return
+		}
+	}
+
+	json.NewEncoder(w).Encode(students)
+}
+
+func main() {
+
+	r := chi.NewRouter()
+
+	x := adress{Village: "SHOHAGPUR", Thana: "kapasia", District: "gazipur"}
+
+	students = append(students, student{Name: "Ikbal", ID: "1503030", Adress: x})
+
+	y := adress{Village: "bagha", Thana: "kajla", District: "Rajshahi"}
+
+	students = append(students, student{Name: "Md moshiur rahman ", ID: "1503061", Adress: y})
+
+	r.Post("/student", Add_New_Student)
+	r.Get("/student", Get_All_Students)
+	r.Get("/student/{id}", Get_Student_With_ID)
+	r.Put("/student/{id}", Update_Student_With_ID)
+	r.Delete("/student/{id}", Delete_Student_with_ID)
+
+	http.ListenAndServe(":8000", r)
+}
